@@ -32,7 +32,6 @@ jobs:
       - name: Run tests
         run: go test -v ./pkg/...
       - name: Print out docker containers' logs
-        if: always()
         run: docker-compose logs
         if: ${{ inputs.docker-compose }}
 
