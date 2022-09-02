@@ -1,0 +1,49 @@
+name: golang
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        required: true
+        type: number
+      docker-compose:
+        required: false
+        type: boolean
+        default: false
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ inputs.go-version }}
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: cache-${{ hashFiles('**/go.sum') }}
+      - name: Start testing dependencies
+        run: docker-compose up -d
+        if: ${{ inputs.docker-compose }}
+      - name: Run tests
+        run: go test -v ./pkg/...
+      - name: Print out docker containers' logs
+        if: always()
+        run: docker-compose logs
+        if: ${{ inputs.docker-compose }}
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ inputs.go-version }}
+      - uses: actions/checkout@v3
+      - uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --verbose --config .golangci.yml
